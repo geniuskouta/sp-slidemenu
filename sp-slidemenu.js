@@ -44,7 +44,22 @@ support.addEventListener = 'addEventListener' in window;
 support.msPointer = window.navigator.msPointerEnabled;
 support.cssAnimation = (support.transform3d || support.transform) && support.transition;
 support.touch = 'ontouchend' in window;
-
+support.passive = false;
+// https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+try {
+  var options = {
+    get passive() { // This function will be called when the browser
+                    //   attempts to access the passive property.
+      support.passive = true;
+      return false;
+    }
+  };
+  window.addEventListener("test", null, options);
+  window.removeEventListener("test", null, options);
+} catch(err) {
+  support.passive = false;
+}
+    
 EVENTS = {
     start: {
         touch: 'touchstart',
@@ -888,22 +903,32 @@ function getDimentions(element) {
 function getPage(event, page) {
     return event.changedTouches ? event.changedTouches[0][page] : event[page];
 }
-function addTouchEvent(eventType, element, listener, useCapture) {
+function addTouchEvent(eventType, element, listener, useCapture, passive) {
     useCapture = useCapture || false;
+    passive = passive || false;
+    var options = support.passive ? {
+        capture: useCapture,
+        passive: passive
+    } : useCapture;
 
     if (support.touch) {
-        element.addEventListener(EVENTS[eventType].touch, listener, useCapture);
+        element.addEventListener(EVENTS[eventType].touch, listener, options);
     } else {
-        element.addEventListener(EVENTS[eventType].mouse, listener, useCapture);
+        element.addEventListener(EVENTS[eventType].mouse, listener, options);
     }
 }
-function removeTouchEvent(eventType, element, listener, useCapture) {
+function removeTouchEvent(eventType, element, listener, useCapture, passive) {
     useCapture = useCapture || false;
+    passive = passive || false;
+    var options = support.passive ? {
+        capture: useCapture,
+        passive: passive
+    } : useCapture;
 
     if (support.touch) {
-        element.removeEventListener(EVENTS[eventType].touch, listener, useCapture);
+        element.removeEventListener(EVENTS[eventType].touch, listener, options);
     } else {
-        element.removeEventListener(EVENTS[eventType].mouse, listener, useCapture);
+        element.removeEventListener(EVENTS[eventType].mouse, listener, options);
     }
 }
 function hasClass(elem, className) {
